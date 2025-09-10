@@ -1,15 +1,12 @@
-import { PrismaClient } from "@prisma/client";
+import  prisma  from "@/lib/prisma";
 import Navbar from "@/Component/navbar/page";
 import CreatList from "@/Component/createlist/page";
 import GetALLLists from "@/Component/getlist/page";
-const prisma = new PrismaClient();
-
 type BoardPageProps = {
   params: {
     id: string;
   };
 };
-
 
 export default async function BoardId({ params }: BoardPageProps) {
   const board = await prisma.board.findUnique({
@@ -19,6 +16,8 @@ export default async function BoardId({ params }: BoardPageProps) {
   if (!board) {
     return <div>Board not found</div>;
   }
+
+
 
   return (
     <>
