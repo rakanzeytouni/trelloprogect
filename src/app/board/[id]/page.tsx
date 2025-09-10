@@ -2,8 +2,12 @@ import prisma from "@/lib/prisma";
 import Navbar from "@/Component/navbar/page";
 import CreatList from "@/Component/createlist/page";
 import GetALLLists from "@/Component/getlist/page";
-
-export default async function BoardId({ params }: { params: { id: string } }) {
+interface Props {
+  params: {
+    id: string;
+  };
+}
+export default async function BoardId({ params }:  Props ) {
   const { id } = params;
   const board = await prisma.board.findUnique({
     where: { id: Number(id) },
