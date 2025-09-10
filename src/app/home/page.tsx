@@ -3,27 +3,43 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../../Component/navbar/page";
 import Footer from "@/Component/footer/page";
-import { CreateBoard } from "@/Component/action/board";
+
+// ✅ No need to import CreateBoard if you're using fetch to /api/create-board
 
 export default function Home() {
   const [showTitle, setShowTitle] = useState(false);
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<null | {id:string; Name:string; email:string; password:string}>(null);
+  const [currentUser, setCurrentUser] = useState<null | { id: string; Name: string; email: string; password: string }>(null);
 
-useEffect(() => {
-  const storedUser = localStorage.getItem("currentUser");
-  if (storedUser) setCurrentUser(JSON.parse(storedUser));
-}, []);
+  useEffect(() => {
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) setCurrentUser(JSON.parse(storedUser));
+  }, []);
 
-
-  const handleboard = async (formData: FormData) => {
+  // ✅ PLACE handleSubmit HERE — inside the component
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     const title = formData.get("title") as string;
+
     if (!title || !currentUser?.id) return;
-    const board = await CreateBoard({ title, userId: currentUser.id });
-    if (board && board.id) {
+
+    const res = await fetch("/api/home", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, userId: currentUser.id }),
+    });
+
+    const board = await res.json();
+
+    if (res.ok && board.id) {
       router.push(`/board/${board.id}`);
+    } else {
+      console.error("Failed to create board:", board);
+      alert("Failed to create board. Please try again.");
     }
   };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -43,28 +59,31 @@ useEffect(() => {
             >
               Create Board
             </button>
-            <button className="bg-gray-200 hover:bg-gray-300  text-gray-800 font-semibold px-6 py-2 rounded-lg shadow transition">
+            <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-2 rounded-lg shadow transition">
               View Templates
             </button>
           </div>
+
           {showTitle && (
             <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
-            <div className="mt-4 p-6 bg-amber-300 rounded-xl shadow-lg w-full max-w-md mx-auto">
-              <form action={handleboard} className="flex items-center gap-3">
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="Enter your title here"
-                  className="flex-1 h-12 px-4 rounded-lg border border-gray-600 bg-amber-50 text-black placeholder-gray-400 focus:outline-none focus:ring-2"
-                />
-                <button
-                  type="submit"
-                  className="bg-gray-300 hover:bg-gray-900 text-gray-800 font-semibold px-5 h-12 rounded-xl shadow-md transition"
-                >
-                  Create
-                </button>
-              </form>
-            </div>
+              <div className="mt-4 p-6 bg-amber-300 rounded-xl shadow-lg w-full max-w-md mx-auto">
+                {/* ✅ REPLACE form with onSubmit + handleSubmit */}
+                <form onSubmit={handleSubmit} className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    name="title"
+                    placeholder="Enter your title here"
+                    className="flex-1 h-12 px-4 rounded-lg border border-gray-600 bg-amber-50 text-black placeholder-gray-400 focus:outline-none focus:ring-2"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="bg-gray-300 hover:bg-gray-900 text-gray-800 font-semibold px-5 h-12 rounded-xl shadow-md transition"
+                  >
+                    Create
+                  </button>
+                </form>
+              </div>
             </div>
           )}
         </div>

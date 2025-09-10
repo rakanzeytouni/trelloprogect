@@ -1,18 +1,29 @@
 "use server";
 import prisma from "@/lib/prisma";
-interface CreateBoards {
-  title: string;
-  userId: string;
-}
-export async function CreateBoard({ title,userId }: CreateBoards) {
-  return await prisma.board.create({
-    data: { title, userId },
-    select: {
-      id: true,
-      title: true,
-      userId:true
-    }
+// @/Component/action/board.ts
+
+import { revalidatePath } from 'next/cache';
+
+
+export async function CreateBoard(formData: FormData) {
+  const title = formData.get('title') as string;
+  const userId = formData.get('userId') as string;
+
+  // Validate
+  if (!title || !userId) {
+    throw new Error('Title and userId are required');
+  }
+
+  // Your DB logic here — example:
+  const newBoard = await prisma.board.create({
+    data: {
+      title,
+      userId,
+    },
   });
+
+  revalidatePath('/home');
+  return newBoard; // or redirect(`/board/${newBoard.id}`);
 }
 interface createLists{
     Name:string;
