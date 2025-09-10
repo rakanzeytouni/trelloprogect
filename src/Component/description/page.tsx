@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { createdescription, updateCartList } from "../action/board";
 import DeleteCarts from "../deletecart/deletecart";
@@ -14,7 +14,8 @@ interface CartProps {
   lists?: { id: number; Name: string }[];
 }
 
-export function Description({ cart, lists }: CartProps) {
+export function Description({ cart, lists = [] }: CartProps) {
+  const router = useRouter(); // ✅ For smooth refresh
   const [open, setOpen] = useState(false);
   const [data, setData] = useState({
     type: "doc",
@@ -24,7 +25,7 @@ export function Description({ cart, lists }: CartProps) {
         content: [
           {
             type: "text",
-            text: cart.description || "", // Initialize with existing description if any
+            text: cart.description || "",
           },
         ],
       },
@@ -48,7 +49,6 @@ export function Description({ cart, lists }: CartProps) {
         animation: slideInSide 0.3s ease-out;
       }
 
-      /* Mobile Responsiveness */
       @media (max-width: 768px) {
         .mobile-full {
           width: 100vw !important;
@@ -118,7 +118,6 @@ export function Description({ cart, lists }: CartProps) {
             className="fixed top-24 right-0 bg-amber-300 w-[90vw] max-w-md h-[90vh] md:w-150 md:h-155 rounded-l-2xl md:rounded-l-2xl shadow-2xl p-6 flex flex-col gap-5 animate-slideInSide mobile-full md:mobile-full-off"
             style={{ zIndex: 50 }}
           >
-            {/* Close Button for Mobile */}
             <button
               onClick={handleClose}
               className="self-end text-gray-600 hover:text-gray-800 text-2xl md:hidden"
@@ -149,9 +148,10 @@ export function Description({ cart, lists }: CartProps) {
 
               <MoveCartButton
                 cartId={cart.id}
-                lists={lists ?? []}
+                lists={lists}
                 data={data}
                 setData={setData}
+                router={router} // ✅ Pass router for refresh
               />
             </form>
           </div>,
@@ -161,34 +161,47 @@ export function Description({ cart, lists }: CartProps) {
   );
 }
 
+interface MoveCartButtonProps {
+  cartId: number;
+  lists: { id: number; Name: string }[];
+  data: any;
+  setData: React.Dispatch<React.SetStateAction<any>>;
+  router: ReturnType<typeof useRouter>; // ✅ Add router prop
+}
+
 export function MoveCartButton({
   cartId,
   lists,
   data,
   setData,
-}: {
-  cartId: number;
-  lists: { id: number; Name: string }[];
-  data: any;
-  setData: React.Dispatch<React.SetStateAction<any>>;
-}) {
+  router,
+}: MoveCartButtonProps) {
   const [selectedList, setSelectedList] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // ✅ Add loading state
 
   const selecteList = async () => {
     if (!selectedList) return;
-    const Text = JSON.stringify(data);
 
-    await createdescription({ description: Text, cartId });
+    setIsLoading(true);
+    try {
+      const Text = JSON.stringify(data);
 
-    const res = await updateCartList({ cartId, newListId: selectedList });
-    setMessage(res.message);
+      // ✅ Update description
+      await createdescription({ description: Text, cartId });
 
-    // Better than window.location.reload() — use router.refresh() if available
-    // But since you're using "use client", and no router here, reload is fallback
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000); // Delay to show message
+      // ✅ Move card to new list
+      const res = await updateCartList({ cartId, newListId: selectedList });
+      setMessage(res.message);
+
+      // ✅ Refresh page instead of reload
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating card:", error);
+      setMessage("Failed to update card. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -211,14 +224,17 @@ export function MoveCartButton({
         <button
           type="button"
           onClick={selecteList}
-          className="w-full md:w-auto py-3 px-6 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium transition mobile-button"
+          disabled={isLoading || !selectedList} // ✅ Disable when loading or no selection
+          className="w-full md:w-auto py-3 px-6 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium transition mobile-button disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Move Card
+          {isLoading ? "Moving..." : "Move Card"}
         </button>
       </div>
 
       {message && (
-        <p className="text-green-700 font-medium text-sm text-center mt-2">
+        <p className={`font-medium text-sm text-center mt-2 ${
+          message.includes("Failed") ? "text-red-700" : "text-green-700"
+        }`}>
           {message}
         </p>
       )}

@@ -3,33 +3,26 @@
 import React from "react";
 import { Description } from "../description/page";
 ; // adjust path
+interface List {
+  id: number;
+  Name: string;
+  // ... other fields you use
+}
 
-// ✅ Define Cart type
-type Cart = {
-  id: string;
-  title: string;
-  // Add other fields you use
-};
+interface Props {
+  listId: number;   // ✅ This was missing!
+  lists: List[];
+}
 
-type Props = {
-  getCarts: Cart[];
-  lists: any[]; // 👈 Also type this properly if possible!
-};
+export default function GetAllCarts({ listId, lists }: Props) {
+  // Filter carts by listId if needed, or pass to child components
+  const filteredCarts = lists.filter(list => list.id === listId); // example logic
 
-export default function GetCarts({ getCarts, lists }: Props) {
   return (
     <div className="flex flex-col gap-4">
-      {getCarts.length > 0 ? (
-        getCarts.map((cart: Cart) => (
-          <Description
-  key={cart.id}
-  cart={{
-    ...cart,
-    Name: cart.title, // 👈 Map 'title' to 'Name'
-    id: Number(cart.id), // 👈 If needed to convert string → number
-  }}
-  lists={lists}
-/>
+      {lists.length > 0 ? (
+        lists.map((cart: List) => (
+          <Description key={cart.id} cart={cart} lists={lists} />
         ))
       ) : (
         <p>No carts available.</p>

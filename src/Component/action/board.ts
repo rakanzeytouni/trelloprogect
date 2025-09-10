@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 // @/Component/action/board.ts
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from "next/navigation";
 
 
 export async function CreateBoard(formData: FormData) {
@@ -25,50 +26,87 @@ export async function CreateBoard(formData: FormData) {
   revalidatePath('/home');
   return newBoard; // or redirect(`/board/${newBoard.id}`);
 }
-interface createLists{
-    Name:string;
-      boardId: number;
-}
-export async function CreateList({
-  Name,
-    boardId,
 
-}:createLists) {
+export async function CreateList(formData: FormData) {
+  const Name = formData.get('Name')?.toString() || '';
+  const boardIdStr = formData.get('boardId')?.toString();
+
+  if (!Name || !boardIdStr) {
+    throw new Error('Name and boardId are required');
+  }
+
+  const boardId = parseInt(boardIdStr, 10);
+
   await prisma.lists.create({
-    data: { Name ,  boardId },
-});
+   data: {
+    Name,
+    boardId,
+  },
+  });
+
+  revalidatePath('/board/[id]', 'page');
 }
+
+
+
 interface CreateCarts {
   Name: string;
   Description: string | null;
   listId: number;
 }
 
-export async function CreateCart({ Name, Description, listId }: CreateCarts) {
+// ✅ Keep this for internal use (optional)
+async function createCartInternal({ Name, Description, listId }: CreateCarts) {
   const lastCart = await prisma.carts.findFirst({
     where: { listId },
     orderBy: { order: "desc" },
   });
+
   const newOrder = (lastCart?.order || 0) + 1;
+
   return await prisma.carts.create({
-    data: {
+     data:{
       Name,
       Description,
-      order: newOrder, 
+      order: newOrder,
       listId,
     },
   });
 }
-export async function deletelist({ id }: { id: number }) {
-  return await prisma.lists.delete({
-    where: { id },
+
+// ✅ Export this as your Server Action — accepts FormData
+export async function CreateCart(formData: FormData) {
+  const Name = formData.get('Name')?.toString() || '';
+  const Description = formData.get('Description')?.toString() || null;
+  const listIdStr = formData.get('listId')?.toString();
+
+  if (!Name || !listIdStr) {
+    throw new Error('Name and listId are required');
+  }
+
+  const listId = parseInt(listIdStr, 10);
+
+  // ✅ Call internal function
+  return await createCartInternal({
+    Name,
+    Description,
+    listId,
   });
 }
-export async function deleteboard({ id }: { id: number }) {
-  return await prisma.board.delete({
-    where: { id },
-  });
+
+interface DeleteListInput {
+  id: number;
 }
+
+export async function deletelist({ id }: DeleteListInput) {
+await prisma.lists.delete({
+  where: { id }, // ✅ Only one set of braces
+});
+  revalidatePath('/board/[id]', 'page'); // 👈 Adjust path to match your board page
+}
+
+
+
 interface GetAllCartsProps {
   listId: number;
 }
@@ -98,17 +136,19 @@ export default async function getAllCarts({listId}:GetAllCartsProps) {
     data: { listId: newListId },
   });
 
+  revalidatePath('/board/[id]', 'page'); // 👈 Add this
+
   return { message: "card edit done✅" };
 }
 
 export async function createdescription({
   cartId,
   description,
-}:{
+}: {
   cartId: number;
   description: string | null;
 }) {
-  return await prisma.carts.update({
+  const result = await prisma.carts.update({
     where: { id: cartId },
     data: {
       Description: description,
@@ -117,22 +157,25 @@ export async function createdescription({
       id: true,
       Name: true,
       Description: true,
-    }
+    },
   });
-}
-interface deletecards {
 
+  revalidatePath('/board/[id]', 'page'); // 👈 Add this
+
+  return result;
+}
+interface DeleteCartInput {
   id: number;
-
-}
-export async function deletecarts({ id }: deletecards) {
-  return await prisma.carts.delete({
-    
-    where: { id },
-
-  });
 }
 
+export async function deletecarts({ id }: DeleteCartInput) {
+ await prisma.carts.delete({
+  where: { id }, // ✅ Only one set of braces
+});
+
+  // Revalidate the board page — adjust path as needed
+  revalidatePath('/board/[id]', 'page');
+}
 
 export async function Signinuser({ Name, email, password }: { Name: string; email: string; password: string }) {
   const user = await prisma.user.findFirst({
@@ -168,4 +211,14 @@ export async function getboards ({ userId }: { userId: string }) {
     },
   });
   
+}
+interface DeleteBoardInput {
+  id: number;
+}
+
+export async function deleteboard({ id }: DeleteBoardInput) {
+  await prisma.board.delete({
+    where:{id},
+  })
+  redirect("/home")
 }

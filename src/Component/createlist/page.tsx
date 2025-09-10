@@ -1,18 +1,16 @@
 "use client";
-import { useState,useEffect } from "react";
-import React from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreateList, } from "../action/board";
-
+import { CreateList } from "../action/board"; // Server Action
 interface CreatListProps {
   bId: number;
 }
-
 export default function CreatList({ bId }: CreatListProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false); // اسم جديد أوضح: showForm
+  const [showForm, setShowForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // ✅ Loading state
 
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,26 +23,30 @@ export default function CreatList({ bId }: CreatListProps) {
     }
   };
 
-  // Handle form submission
+  // Handle form submission — pass FormData directly to Server Action
   const handleCreateList = async (formData: FormData) => {
-    const Name = formData.get("Name")?.toString() || "";
+    setIsLoading(true);
     try {
-      await CreateList({
-        Name,
-        boardId: bId,
-      });
+      // Append boardId since it's not in the form input
+      formData.append("boardId", bId.toString());
 
-      // Reset and close form
+      // Call Server Action with FormData
+      await CreateList(formData);
+
+      // Reset form
       setShowForm(false);
       setName("");
-      router.refresh(); // تحديث الصفحة بدون مغادرتها
+      setError(null);
+      router.refresh(); // Refresh to show new list
     } catch (error) {
       console.error("Failed to create list:", error);
       setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle cancel — close form and reset
+  // Handle cancel
   const handleCancel = () => {
     setShowForm(false);
     setName("");
@@ -53,19 +55,19 @@ export default function CreatList({ bId }: CreatListProps) {
 
   return (
     <div className="w-full mb-6">
-      {/* زر Add New List — ما يقفل الفورم، فقط يفتحه دائمًا */}
+      {/* Button to open form */}
       <button
-        onClick={() => setShowForm(true)} // 👈 هنا التغيير: فقط true
+        onClick={() => setShowForm(true)}
         className="w-full h-12 rounded-xl font-medium text-white shadow-md transition-all duration-300 transform active:scale-95 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 flex items-center justify-center space-x-2"
       >
         <span>➕</span>
-        <span>Add New List</span> {/* 👈 دايمًا نفس النص */}
+        <span>Add New List</span>
       </button>
 
-      {/* الفورم — يظهر فقط إذا showForm === true */}
+      {/* Form (shown conditionally) */}
       {showForm && (
         <div className="mt-4 bg-white rounded-2xl p-4 shadow-lg border border-amber-200 animate-fadeIn w-full relative">
-          {/* زر الإغلاق (Cancel) — ظاهر للجميع (موبايل وديسكتوب) */}
+          {/* Close button */}
           <button
             type="button"
             onClick={handleCancel}
@@ -81,7 +83,7 @@ export default function CreatList({ bId }: CreatListProps) {
               const formData = new FormData(e.currentTarget);
               handleCreateList(formData);
             }}
-            className="space-y-3 pt-6" // إضافة padding-top عشان ما يتداخلش مع زر الإغلاق
+            className="space-y-3 pt-6"
           >
             <input
               type="text"
@@ -98,17 +100,16 @@ export default function CreatList({ bId }: CreatListProps) {
             <div className="flex gap-3">
               <button
                 type="submit"
-                disabled={!!error || name.trim().length < 3}
+                disabled={isLoading || !!error || name.trim().length < 3}
                 className={`flex-1 h-10 rounded-lg font-medium text-white shadow ${
-                  !!error || name.trim().length < 3
+                  isLoading || !!error || name.trim().length < 3
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-amber-600 to-amber-700 hover:shadow-md"
                 }`}
               >
-                Create
+                {isLoading ? "Creating..." : "Create"}
               </button>
 
-              {/* زر Cancel واضح — للجميع */}
               <button
                 type="button"
                 onClick={handleCancel}
