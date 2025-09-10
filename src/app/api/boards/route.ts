@@ -1,19 +1,30 @@
-import { getboards } from "@/Component/action/board"; 
-import { NextRequest, NextResponse } from "next/server";
+// app/api/boards/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const userId = searchParams.get("userId");
-
-  if (!userId) {
-    return NextResponse.json({ error: "User ID required" }, { status: 400 });
-  }
-
+export async function GET(req: NextRequest) {
   try {
-    const boards = await getboards({ userId });
-    return NextResponse.json(boards);
-  } catch (error) {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    const boards = await prisma.board.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        title: true,
+        creatAT: true,
+        updateAt: true,
+      },
+      orderBy: { creatAT: 'desc' },
+    });
+
+    return NextResponse.json(boards, { status: 200 });
+  } catch (error: any) {
     console.error("Error fetching boards:", error);
-    return NextResponse.json({ error: "Failed to fetch boards" }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to fetch boards' }, { status: 500 });
   }
 }

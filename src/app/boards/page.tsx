@@ -1,14 +1,15 @@
 "use client";
 import Footer from "@/Component/footer/page";
 import Navbar from "@/Component/navbar/page";
-import BoardList from "@/Component/boardlist/page"; 
+import BoardList from "@/Component/boardlist/page";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 
+// ✅ Changed id to number to match your Prisma schema and BoardList component
 type Board = {
-  id: string;
+  id: number;
   title: string;
-  creatAT: string; 
+  creatAT: string;
   updateAt: string;
 };
 
@@ -22,7 +23,9 @@ export default function Boards() {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
       try {
-        setCurrentUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setCurrentUser(parsedUser);
+        setLoading(false); // ✅ Set loading to false after parsing
       } catch (err) {
         console.error("Failed to parse user", err);
         setError("Failed to load user.");
@@ -31,7 +34,7 @@ export default function Boards() {
     } else {
       setLoading(false);
     }
-  },[]);
+  }, []);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -39,18 +42,20 @@ export default function Boards() {
         try {
           setLoading(true);
           setError(null);
-          const res = await fetch(`/api/boards?userId=${(currentUser.id)}`);
+          const res = await fetch(`/api/boards?userId=${encodeURIComponent(currentUser.id)}`); // ✅ Encode URI component
 
           if (!res.ok) {
             let errorMsg = "Failed to fetch boards";
             try {
               const errorData = await res.json();
               errorMsg = errorData.error || errorMsg;
-            } catch (error) {}
+            } catch (error) {
+              // Ignore JSON parse error
+            }
             throw new Error(errorMsg);
           }
 
-          const data :Board[] = await res.json();
+          const data: Board[] = await res.json();
           setBoards(data);
         } catch (err: any) {
           console.error("Fetch error:", err);
@@ -68,12 +73,14 @@ export default function Boards() {
     return (
       <>
         <Navbar />
-     <Link
-  href="/signin"
-  className="p-4 text-center bg-blue-800 text-white rounded-lg shadow hover:bg-blue-700 transition"
->
-  Please sign in
-</Link>
+        <div className="flex justify-center items-center min-h-screen">
+          <Link
+            href="/signin"
+            className="p-4 text-center bg-blue-800 text-white rounded-lg shadow hover:bg-blue-700 transition"
+          >
+            Please sign in
+          </Link>
+        </div>
         <Footer />
       </>
     );
@@ -84,11 +91,15 @@ export default function Boards() {
       <Navbar />
       <div className="p-10">
         {loading ? (
-          <p>Loading boards...</p>
+          <div className="flex justify-center items-center min-h-64">
+            <p className="text-lg">Loading boards...</p>
+          </div>
         ) : error ? (
-          <p className="text-red-500">Error: {error}</p>
+          <div className="flex justify-center items-center min-h-64">
+            <p className="text-red-500">Error: {error}</p>
+          </div>
         ) : (
-          <BoardList boards={boards} /> 
+          <BoardList boards={boards} />
         )}
       </div>
       <Footer />
