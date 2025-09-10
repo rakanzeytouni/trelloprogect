@@ -1,44 +1,44 @@
-
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-model User{
-  id String @id @default(cuid())
-  Name String
-  password String
-  email String @unique 
-  boards   Board[] 
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-model Board{
-   id Int @id @default(autoincrement())
-  title String 
+model User {
+  id       String  @id @default(cuid())
+  Name     String
+  password String
+  email    String  @unique
+  boards   Board[]
+}
+
+model Board {
+  id       Int      @id @default(autoincrement())
+  title    String
   updateAt DateTime @updatedAt
-  creatAT DateTime @default(now())
-    userId  String? 
-  user   User?  @relation(fields: [userId], references: [id])
-  List  Lists[]
+  creatAT  DateTime @default(now())
+  userId   String?
+  user     User?    @relation(fields: [userId], references: [id])
+  List     Lists[]
 }
 
 model Lists {
   id       Int      @id @default(autoincrement())
   Name     String
-  boardId  Int  
-  board    Board    @relation(fields: [boardId], references: [id],onDelete: Cascade)
+  boardId  Int
   updateAt DateTime @updatedAt
   creatAT  DateTime @default(now())
   carts    Carts[]
+  board    Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
 }
 
 model Carts {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   Name        String
   Description String?
   order       Int
