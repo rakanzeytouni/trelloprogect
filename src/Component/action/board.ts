@@ -121,23 +121,8 @@ export async function deletecarts({ id }: deletecards) {
 
   });
 }
-interface creatuser {
-  Name: string;
-  email: string
-  password: string;
-}
 
-export async function Signupuser({ Name, email, password }: creatuser) {
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    throw new Error("Email already exists");
-  }
 
-  return await prisma.user.create({
-    data: { Name: Name, email, password }, // لاحظ: Prisma schema عنده "name" مو "Name"
-    select: { id: true, Name: true, email: true, password: true },
-  });
-}
 export async function Signinuser({ Name, email, password }: { Name: string; email: string; password: string }) {
   const user = await prisma.user.findFirst({
     where: { Name, email, password }, 

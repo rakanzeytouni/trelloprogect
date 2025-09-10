@@ -1,23 +1,24 @@
-import  prisma  from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import Navbar from "@/Component/navbar/page";
 import CreatList from "@/Component/createlist/page";
 import GetALLLists from "@/Component/getlist/page";
+
+// You can simplify the type, as `params` is now a Promise
 type BoardPageProps = {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 };
 
 export default async function BoardId({ params }: BoardPageProps) {
+  // AWAIT the params object first
+  const resolvedParams = await params;
+
   const board = await prisma.board.findUnique({
-    where: { id: Number(params.id) },
+    where: { id: Number(resolvedParams.id) }, // Use the resolved params
   });
 
   if (!board) {
     return <div>Board not found</div>;
   }
-
-
 
   return (
     <>

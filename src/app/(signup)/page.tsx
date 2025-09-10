@@ -10,31 +10,45 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [wrongPass, setWrongPass] = useState<string | null>(null);
-  const [errorPass, setErrorPass] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   // Handlers
   const handleName = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setName(val);
-    setError(val.trim().length < 5 ? "Name must be at least 5 characters." : null);
+    if (val.trim().length < 5) {
+      setNameError("Name must be at least 5 characters.");
+    } else {
+      setNameError(null);
+    }
   };
 
-  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value);
+  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
 
   const handlePassword = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setPassword(val);
-    if (val.length < 8) setWrongPass("Password must be at least 8 characters.");
-    else if (!/[!@#$%^&*(),.?":{}|<>]/.test(val))
-      setWrongPass("Password must include at least one special character.");
-    else setWrongPass(null);
+    if (val.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(val)) {
+      setPasswordError("Password must include at least one special character.");
+    } else {
+      setPasswordError(null);
+    }
   };
 
   const handleConfirm = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setConfirm(val);
-    setErrorPass(val !== password ? "Passwords do not match!" : null);
+    if (val !== password) {
+      setConfirmError("Passwords do not match!");
+    } else {
+      setConfirmError(null);
+    }
   };
 
   // Button condition
@@ -43,11 +57,28 @@ export default function SignupPage() {
     email.trim().length > 0 &&
     password.length >= 8 &&
     /[!@#$%^&*(),.?":{}|<>]/.test(password) &&
-    confirm === password;
+    confirm === password &&
+    !nameError &&
+    !passwordError &&
+    !confirmError;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Final validation before submission
+    if (!canSubmit) {
+      if (name.trim().length < 5) {
+        setNameError("Name must be at least 5 characters.");
+      }
+      if (password.length < 8) {
+        setPasswordError("Password must be at least 8 characters.");
+      }
+      if (confirm !== password) {
+        setConfirmError("Passwords do not match!");
+      }
+      return;
+    }
 
     const payload = { name, email, password, confirmPassword: confirm };
 
@@ -65,6 +96,7 @@ export default function SignupPage() {
         return;
       }
 
+      // Store user data and token
       localStorage.setItem("currentUser", JSON.stringify(data.user));
       localStorage.setItem("token", data.token);
       router.push("/home");
@@ -78,6 +110,13 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
         <h1 className="text-2xl font-bold text-amber-500 text-center mb-6">Sign Up</h1>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
         <form className="flex flex-col" onSubmit={handleSubmit}>
           <input
             name="name"
@@ -87,7 +126,7 @@ export default function SignupPage() {
             required
             className="mb-3 px-4 h-12 border rounded-lg focus:outline-none focus:ring-amber-300 focus:border-amber-400"
           />
-          {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
+          {nameError && <p className="text-red-600 text-sm mb-2">{nameError}</p>}
 
           <input
             name="email"
@@ -108,7 +147,7 @@ export default function SignupPage() {
             type="password"
             className="mb-3 px-4 h-12 border rounded-lg focus:outline-none focus:ring-amber-300 focus:border-amber-400"
           />
-          {wrongPass && <p className="text-red-600 text-sm mb-2">{wrongPass}</p>}
+          {passwordError && <p className="text-red-600 text-sm mb-2">{passwordError}</p>}
 
           <input
             name="confirmPassword"
@@ -119,12 +158,12 @@ export default function SignupPage() {
             type="password"
             className="mb-3 px-4 h-12 border rounded-lg focus:outline-none focus:ring-amber-300 focus:border-amber-400"
           />
-          {errorPass && <p className="text-red-600 text-sm mb-2">{errorPass}</p>}
+          {confirmError && <p className="text-red-600 text-sm mb-2">{confirmError}</p>}
 
           <button
             type="submit"
             disabled={!canSubmit}
-            className="bg-amber-400 hover:bg-amber-500 text-white py-3 rounded-lg font-semibold disabled:opacity-60"
+            className="bg-amber-400 hover:bg-amber-500 text-white py-3 rounded-lg font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Sign Up
           </button>
