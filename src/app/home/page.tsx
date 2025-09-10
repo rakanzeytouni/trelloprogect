@@ -3,40 +3,43 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../../Component/navbar/page";
 import Footer from "@/Component/footer/page";
-
-// ✅ No need to import CreateBoard if you're using fetch to /api/create-board
-
 export default function Home() {
   const [showTitle, setShowTitle] = useState(false);
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<null | { id: string; Name: string; email: string; password: string }>(null);
-
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) setCurrentUser(JSON.parse(storedUser));
   }, []);
 
-  // ✅ PLACE handleSubmit HERE — inside the component
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const title = formData.get("title") as string;
 
-    if (!title || !currentUser?.id) return;
+    if (!title || !currentUser?.id) {
+      alert("Please enter a title and log in.");
+      return;
+    }
 
-    const res = await fetch("/api/home", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, userId: currentUser.id }),
-    });
+    try {
+      const res = await fetch("api/create-board", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, userId: currentUser.id }),
+      });
 
-    const board = await res.json();
-
-    if (res.ok && board.id) {
-      router.push(`/board/${board.id}`);
-    } else {
-      console.error("Failed to create board:", board);
-      alert("Failed to create board. Please try again.");
+      if (res.ok) {
+        const board = await res.json();
+        router.push(`/board/${board.id}`);
+      } else {
+        const error = await res.json();
+        console.error("Create board error:", error);
+        alert("Failed to create board: " + error.error);
+      }
+    } catch (err) {
+      console.error("Network error:", err);
+      alert("Network error. Please try again.");
     }
   };
 
@@ -67,7 +70,6 @@ export default function Home() {
           {showTitle && (
             <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
               <div className="mt-4 p-6 bg-amber-300 rounded-xl shadow-lg w-full max-w-md mx-auto">
-                {/* ✅ REPLACE form with onSubmit + handleSubmit */}
                 <form onSubmit={handleSubmit} className="flex items-center gap-3">
                   <input
                     type="text"
