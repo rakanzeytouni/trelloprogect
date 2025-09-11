@@ -7,17 +7,21 @@ interface GetALLListsProps {
   boardId: number;
 }
 
-// ✅ Define the type for each list item returned from Prisma
 interface List {
-  id: number;    // 👈 Prisma returns `number` if your DB uses auto-increment ID
+  id: number;
   Name: string;
 }
 
+interface Cart {
+  id: number;
+  Name: string;
+  listId: number;
+}
+
 export default async function GetALLLists({ boardId }: GetALLListsProps) {
-  // ✅ Explicitly type the result
   const getlist: List[] = await prisma.lists.findMany({
     where: {
-      boardId: boardId,
+      boardId,
     },
     select: {
       id: true,
@@ -25,12 +29,24 @@ export default async function GetALLLists({ boardId }: GetALLListsProps) {
     },
   });
 
+  const carts: Cart[] = await prisma.carts.findMany({
+    where: {
+      listId: {
+        in: getlist.map((list) => list.id),
+      },
+    },
+    select: {
+      id: true,
+      Name: true,
+      listId: true,
+    },
+  });
+
   return (
-  <>
     <div className="flex flex-col items-center w-full px-4 sm:px-0 mt-6">
       <div className="flex-1 w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {getlist.map((list: List) => (
+          {getlist.map((list) => (
             <div
               key={list.id}
               className="bg-yellow-200 rounded-2xl shadow-lg border overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
@@ -43,7 +59,7 @@ export default async function GetALLLists({ boardId }: GetALLListsProps) {
               <div className="border-t border-amber-300"></div>
 
               <div className="p-4 min-h-[120px]">
-                <GetAllCarts listId={list.id} lists={getlist} />
+                <GetAllCarts listId={list.id} carts={carts} />
               </div>
 
               <div className="p-4 border-t border-amber-200">
@@ -54,7 +70,5 @@ export default async function GetALLLists({ boardId }: GetALLListsProps) {
         </div>
       </div>
     </div>
-  </>
-);
+  );
 }
-

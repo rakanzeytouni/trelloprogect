@@ -20,7 +20,7 @@ export default function Deleteboard({ bordeId }: DeleteboardProps) {
       // OR if you want to stay on boards page: router.refresh();
     } catch (error) {
       console.error("Failed to delete board:", error);
-      alert("Failed to delete board. Please try again.");
+       router.push('/home');
     }
   };
 

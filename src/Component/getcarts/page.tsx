@@ -1,31 +1,30 @@
 "use client";
-
 import React from "react";
 import { Description } from "../description/page";
-; // adjust path
-interface List {
+
+interface Cart {
   id: number;
   Name: string;
-  // ... other fields you use
+  listId: number;
+  // ... other fields
 }
 
 interface Props {
-  listId: number;   // ✅ This was missing!
-  lists: List[];
+  listId: number;
+  carts: Cart[]; // ⛔️ كانت غلط
 }
 
-export default function GetAllCarts({ listId, lists }: Props) {
-  // Filter carts by listId if needed, or pass to child components
-  const filteredCarts = lists.filter(list => list.id === listId); // example logic
+export default function GetAllCarts({ listId, carts }: Props) {
+  const filteredCarts = carts.filter(cart => cart.listId === listId);
 
   return (
     <div className="flex flex-col gap-4">
-      {lists.length > 0 ? (
-        lists.map((cart: List) => (
-          <Description key={cart.id} cart={cart} lists={lists} />
+      {filteredCarts.length > 0 ? (
+        filteredCarts.map((cart) => (
+          <Description key={cart.id} cart={cart} />
         ))
       ) : (
-        <p>No carts available.</p>
+        <p className="text-gray-600">No cards available.</p>
       )}
     </div>
   );
