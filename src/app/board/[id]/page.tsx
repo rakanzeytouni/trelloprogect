@@ -3,7 +3,6 @@ import Navbar from "@/Component/navbar/page";
 import CreatList from "@/Component/createlist/page";
 import GetALLLists from "@/Component/getlist/page";
 
-// You can simplify the type, as `params` is now a Promise
 type BoardPageProps = {
   params: Promise<{ id: string }>;
 };
