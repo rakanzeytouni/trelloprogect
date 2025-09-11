@@ -2,7 +2,6 @@ import prisma from "@/lib/prisma";
 import Createcart from "../creatcard/page";
 import GetAllCarts from "../getcarts/page";
 import Deletelist from "../deletelist/deletelist";
-
 interface GetALLListsProps {
   boardId: number;
 }
