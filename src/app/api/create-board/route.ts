@@ -1,6 +1,6 @@
 // app/api/create-board/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import  prisma  from '@/lib/prisma'; // adjust to your DB client
+import  {prisma}  from '@/lib/prisma'; // adjust to your DB client
 
 export async function POST(req: NextRequest) {
   try {
